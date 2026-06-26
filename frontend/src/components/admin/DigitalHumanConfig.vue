@@ -94,7 +94,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary">保存设置</el-button>
+          <el-button type="primary" @click="saveSettings">保存设置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -154,7 +154,28 @@ async function connectVTS() {
   }
 }
 
+function saveSettings() {
+  try {
+    localStorage.setItem('digitalHumanConfig', JSON.stringify(form.value))
+    ElMessage.success('设置已保存')
+  } catch {
+    ElMessage.error('保存失败，请重试')
+  }
+}
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem('digitalHumanConfig')
+    if (saved) {
+      form.value = { ...form.value, ...JSON.parse(saved) }
+    }
+  } catch {
+    // 忽略解析错误，使用默认值
+  }
+}
+
 onMounted(() => {
+  loadSettings()
   checkStatus()
   // 每 5 秒轮询 VTS 状态（连接状态和统计数据会实时变化）
   statusTimer = setInterval(checkStatus, 5000)

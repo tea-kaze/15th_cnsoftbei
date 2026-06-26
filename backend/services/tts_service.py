@@ -27,10 +27,33 @@ def get_voices() -> list:
     return VOICES
 
 
-async def _synthesize_to_file(text: str, voice: str, rate: str, pitch: str, output_path: str):
-    """Internal: synthesize speech to a file"""
+async def _synthesize_to_file(text: str, voice: str, rate: str, pitch: str,
+                              output_path: str) -> list[dict]:
+    """Internal: synthesize speech to a file, return real WordBoundary timestamps"""
     communicate = edge_tts.Communicate(text, voice, rate=rate, pitch=pitch)
-    await communicate.save(output_path)
+    word_timestamps = []
+    current_time = 0
+
+    # Stream to capture WordBoundary events for precise timestamps
+    with open(output_path, "wb") as f:
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                f.write(chunk["data"])
+            elif chunk["type"] == "WordBoundary":
+                offset = chunk.get("offset", 0)
+                duration = chunk.get("duration", 0)
+                word_text = chunk.get("text", "")
+                # Convert from 100-nanosecond units to milliseconds
+                start_ms = offset / 10000
+                dur_ms = duration / 10000
+                word_timestamps.append({
+                    "word": word_text,
+                    "start_ms": round(start_ms),
+                    "end_ms": round(start_ms + dur_ms),
+                })
+                current_time = start_ms + dur_ms
+
+    return word_timestamps
 
 
 async def synthesize(text: str, voice: str = "zh-CN-XiaoxiaoNeural",
@@ -51,20 +74,27 @@ async def synthesize(text: str, voice: str = "zh-CN-XiaoxiaoNeural",
 
     # Return cached if exists
     if not audio_path.exists():
-        await _synthesize_to_file(text, voice, rate, pitch, str(audio_path))
-
-    # Generate word timestamps (approximate: distribute evenly)
-    if ts_path.exists():
+        word_ts = await _synthesize_to_file(text, voice, rate, pitch, str(audio_path))
+        # Cache timestamps (use real WordBoundary data when available)
+        if word_ts:
+            timestamps = word_ts
+            with open(ts_path, "w", encoding="utf-8") as f:
+                json.dump(timestamps, f, ensure_ascii=False)
+        else:
+            timestamps = _generate_timestamps(text, audio_path)
+            with open(ts_path, "w", encoding="utf-8") as f:
+                json.dump(timestamps, f, ensure_ascii=False)
+    elif ts_path.exists():
         with open(ts_path, "r", encoding="utf-8") as f:
             timestamps = json.load(f)
     else:
         timestamps = _generate_timestamps(text, audio_path)
-        with open(ts_path, "w", encoding="utf-8") as f:
-            json.dump(timestamps, f, ensure_ascii=False)
 
-    # Estimate duration from file size (MP3: ~16 KB/s at 128kbps for speech)
-    file_size = audio_path.stat().st_size
-    duration_ms = int(file_size / 16)  # rough estimate ms
+    # Calculate actual duration from MP3 metadata (mutagen is more accurate)
+    if timestamps and timestamps[-1].get("end_ms", 0) > 0:
+        duration_ms = timestamps[-1]["end_ms"]
+    else:
+        duration_ms = _get_mp3_duration_ms(audio_path)
 
     return {
         "audio_url": f"/api/tts/audio/{audio_filename}",
@@ -73,10 +103,23 @@ async def synthesize(text: str, voice: str = "zh-CN-XiaoxiaoNeural",
     }
 
 
+def _get_mp3_duration_ms(audio_path: Path) -> int:
+    """使用 mutagen 读取实际 MP3 时长（毫秒）"""
+    try:
+        from mutagen.mp3 import MP3
+        audio = MP3(str(audio_path))
+        if audio.info.length > 0:
+            return int(audio.info.length * 1000)
+    except Exception:
+        pass
+    # Fallback: rough estimate from file size
+    file_size = audio_path.stat().st_size
+    return int(file_size / 16)
+
+
 def _generate_timestamps(text: str, audio_path: Path) -> list:
     """Generate approximate word timestamps by distributing text evenly over audio duration"""
-    file_size = audio_path.stat().st_size
-    total_duration_ms = max(file_size / 16, 500)  # rough ms estimate
+    total_duration_ms = _get_mp3_duration_ms(audio_path)
 
     # Split text into segments (by punctuation or characters)
     import re

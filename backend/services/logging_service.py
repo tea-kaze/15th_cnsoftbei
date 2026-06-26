@@ -152,6 +152,22 @@ def get_hourly_heatmap(date: str = None) -> list:
     return [{"hour": int(r["hour"]), "count": r["cnt"]} for r in rows]
 
 
+def get_day_samples(date: str, limit: int = 5) -> list:
+    """获取某天的交互样本（用于情感分析）"""
+    init_db()
+    conn = _get_conn()
+    rows = conn.execute(
+        "SELECT question, answer FROM chat_logs WHERE created_at LIKE ? "
+        "ORDER BY RANDOM() LIMIT ?",
+        (date + "%", limit)
+    ).fetchall()
+    conn.close()
+    return [
+        f"游客: {r['question']}\n导游: {r['answer'][:300]}"
+        for r in rows
+    ]
+
+
 def get_recent_interactions(page: int = 1, page_size: int = 20,
                             keyword: str = "", date_from: str = "",
                             date_to: str = "") -> dict:

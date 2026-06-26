@@ -1,9 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import chat, knowledge, tts, admin, recommend, vts
+from middleware import AdminAuthMiddleware, RateLimitMiddleware
 
 app = FastAPI(title="AI智能导游")
 
+# CORS 跨域
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -11,6 +13,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 速率限制（先添加的中间件后执行）
+app.add_middleware(RateLimitMiddleware)
+# 管理后台鉴权
+app.add_middleware(AdminAuthMiddleware)
 
 app.include_router(chat.router)
 app.include_router(knowledge.router)

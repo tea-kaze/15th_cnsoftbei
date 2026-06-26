@@ -69,6 +69,7 @@ const headerTitle = computed(() => {
     '/admin/interactions': '交互记录',
     '/admin/knowledge': '知识库管理',
     '/admin/report': '游客报告',
+    '/admin/digital-human': '数字人配置',
   }
   return map[route.path] || '管理后台'
 })

@@ -1,6 +1,8 @@
 """管理后台 API 路由"""
 from fastapi import APIRouter, Query
 from services import logging_service as log_svc
+from services.llm import classify_sentiment
+from services.analytics_service import get_analytics_summary, load_xlsx_data
 
 router = APIRouter(prefix="/api/admin", tags=["管理后台"])
 
@@ -72,13 +74,17 @@ def report(days: int = Query(7, ge=1, le=90)):
     sorted_concerns = sorted(concerns.items(), key=lambda x: x[1], reverse=True)
     top_concerns = [{"category": c, "score": s} for c, s in sorted_concerns]
 
-    # 情感趋势（简化版：基于关键词的情绪分析）
+    # 情感趋势（基于 LLM 对每日交互样本的情感分类）
     sentiment_trend = []
-    for entry in trend:
+    # 只分析最近有交互的日期（最多 10 天），避免过多 LLM 调用
+    active_days = [e for e in trend if e["count"] > 0][-10:]
+    for entry in active_days:
+        samples = log_svc.get_day_samples(entry["date"], limit=5)
+        level = classify_sentiment(samples) if samples else "neutral"
         sentiment_trend.append({
             "date": entry["date"],
             "count": entry["count"],
-            "level": "positive"  # 默认正面，后续可用 LLM 做精细分析
+            "level": level,
         })
 
     # 服务建议
@@ -100,3 +106,9 @@ def report(days: int = Query(7, ge=1, le=90)):
         "popular_questions": popular[:10],
         "total_interactions": sum(e["count"] for e in trend),
     }
+
+
+@router.get("/analytics")
+def analytics():
+    """大数据分析：基于 xlsx 旅游行为数据的游客画像与消费分析"""
+    return get_analytics_summary()

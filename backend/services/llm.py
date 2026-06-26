@@ -56,6 +56,38 @@ def answer_with_context(question: str, context_chunks: list[str],
     return response.choices[0].message.content
 
 
+def classify_sentiment(interactions: list[str]) -> str:
+    """使用 LLM 对交互样本进行情感分类，返回 positive/neutral/negative"""
+    if not interactions:
+        return "neutral"
+
+    prompt = f"""请分析以下游客与AI导游的对话，判断游客的整体情感倾向。
+只回复一个词：positive（正面/满意）、neutral（中性）或 negative（负面/不满）。
+
+对话内容：
+{chr(10).join(interactions)}
+
+情感倾向："""
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+            max_tokens=10,
+        )
+        result = response.choices[0].message.content.strip().lower()
+        if "negative" in result:
+            return "negative"
+        elif "neutral" in result:
+            return "neutral"
+        else:
+            return "positive"
+    except Exception:
+        # API 调用失败时回退到中性
+        return "neutral"
+
+
 def answer_stream(question: str, context_chunks: list[str],
                   history: Optional[list[dict]] = None) -> Generator[str, None, None]:
     """流式生成回答，逐步 yield token"""
