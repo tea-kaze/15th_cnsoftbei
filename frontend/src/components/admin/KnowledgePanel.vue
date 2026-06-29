@@ -8,6 +8,7 @@
       <el-upload
         ref="uploadRef"
         :action="uploadUrl"
+        :headers="{ 'x-admin-key': 'admin-lingshan-2024' }"
         :accept="'.txt,.pdf,.docx'"
         :limit="10"
         :on-success="onUploadSuccess"

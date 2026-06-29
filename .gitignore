@@ -34,6 +34,9 @@ frontend/.vite/
 # ===== Claude =====
 .claude/
 
+# ===== Playwright =====
+.playwright-mcp/
+
 # ===== OS =====
 .DS_Store
 Thumbs.db

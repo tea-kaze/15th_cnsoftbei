@@ -5,6 +5,14 @@ const api = axios.create({
   timeout: 30000,
 })
 
+// 管理后台鉴权——所有写操作需要携带 API Key
+api.interceptors.request.use((config) => {
+  if (['post', 'put', 'delete', 'patch'].includes(config.method)) {
+    config.headers['x-admin-key'] = 'admin-lingshan-2024'
+  }
+  return config
+})
+
 export async function askQuestion(question, history = []) {
   const { data } = await api.post('/chat/ask', { question, history })
   return data

@@ -16,7 +16,7 @@
 - 数字人：CSS 2D 古风头像 + VTube Studio (Live2D/VRM, 可选)
 - 数据库：SQLite (analytics.db) + JSON (knowledge_index.json)
 - 景区资料：灵山胜境（2 个 docx 文档，37 chunks）
-- Python 路径：C:\Users\32194\AppData\Local\Programs\Python\Python312\python.exe
+- Python 路径：/d/DevelopTool/Python3.13/python (Python 3.13)
 
 ## 启动命令
 ```bash
