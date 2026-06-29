@@ -33,7 +33,7 @@ npx vite
 - 游客端 → http://localhost:5173/visitor
 - 管理后台 → http://localhost:5173/admin
 
-## API 接口 (23 个)
+## API 接口 (25 个)
 
 ### 核心问答
 - GET  /api/health                    健康检查
@@ -57,6 +57,7 @@ npx vite
 - GET  /api/admin/popular             热门问题 Top-N
 - GET  /api/admin/hourly              时段热力图数据
 - GET  /api/admin/report              游客感受度报告
+- GET  /api/admin/analytics           游客行为数据分析
 
 ### 路线推荐
 - POST /api/recommend                 个性化路线推荐 {"interest":"..."}
@@ -88,6 +89,8 @@ A5/
 │   ├── requirements.txt               # Python 依赖
 │   ├── knowledge_index.json           # TF-IDF 检索索引 (37 chunks)
 │   ├── analytics.db                   # SQLite 交互日志（运行时生成）
+│   ├── middleware.py                   # API 安全中间件（鉴权 + 限流）
+│   ├── routes_config.json              # 路线配置数据
 │   ├── routes/
 │   │   ├── chat.py                    # 问答 API + SSE 流式
 │   │   ├── knowledge.py               # 知识库 CRUD
@@ -101,7 +104,8 @@ A5/
 │   │   ├── tts_service.py             # edge-tts 封装 + 缓存
 │   │   ├── vts_service.py             # VTS WebSocket 客户端（单例）
 │   │   ├── logging_service.py         # SQLite 日志 + 统计查询
-│   │   └── recommend_service.py       # 推荐引擎（3 条预设路线）
+│   │   ├── recommend_service.py       # 推荐引擎（3 条预设路线）
+│   │   └── analytics_service.py       # 游客行为数据分析
 │   ├── uploads/                       # 上传文档存储
 │   └── tts_cache/                     # TTS 音频缓存（运行时生成）
 ├── frontend/

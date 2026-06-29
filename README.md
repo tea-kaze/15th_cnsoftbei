@@ -151,6 +151,7 @@ A5/
 │   │   ├── vts.py                    #   VTube Studio 控制
 │   │   ├── admin.py                  #   管理后台统计
 │   │   └── recommend.py              #   路线推荐
+│   │   ├── middleware.py                 #   API 安全中间件（鉴权 + 限流）
 │   └── services/                     # 服务逻辑层
 │       ├── rag.py                    #   TF-IDF 检索 + 文档解析
 │       ├── llm.py                    #   DeepSeek 调用 + 流式生成
@@ -159,7 +160,6 @@ A5/
 │       ├── logging_service.py        #   SQLite 日志 + 统计
 │       ├── recommend_service.py      #   推荐引擎
 │       ├── analytics_service.py      #   游客行为数据分析
-│       └── middleware.py             #   API 安全中间件
 ├── frontend/                         # Vue 3 前端
 │   └── src/
 │       ├── views/                    # 页面（游客端 / 管理后台）
@@ -241,7 +241,7 @@ A5/
 
 | 指标 | 数据 |
 |------|------|
-| 后端 API 端点 | 23 个 |
+| 后端 API 端点 | 25 个 |
 | 知识库文档 | 2 份（37 个知识块） |
 | 预设游览路线 | 3 条 |
 | TTS 发音人 | 5 种 |
